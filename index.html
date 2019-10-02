@@ -1,0 +1,26 @@
+<!--**
+ * Created by Tyler on 2019/10/2 16:20.
+ * -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<script src="MyVue.js"></script>
+<script>
+    const app = new MyVue({
+        data: {
+            name: "I am test.",
+            foo: {
+                bar: '嵌套属性'
+            }
+        }
+    });
+
+    app.$data.name = 'hello,there';
+    app.$data.foo.bar = '嵌套属性响应了没'
+</script>
+</body>
+</html>
