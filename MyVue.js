@@ -10,29 +10,38 @@ class MyVue {
 
         // 数据响应化
         this.$data = this.$options.data;
-        MyVue.observe(this.$data);
+        this.observe(this.$data);
 
 
         // 测试样例
         // new Watcher();
         // this.$data.name;
         // this.$data.name;
+
+        new Compile(options.el, this);
+
+        // created执行
+        if (options.created) {
+            options.created.call(this);
+        }
     }
 
-    static observe(obj){
+    observe(obj){
         if (!obj || typeof obj !== 'object') {
             return;
         }
 
         // 遍历对象，对data进行响应化
         for (let [key, value] of Object.entries(obj)) {
-            MyVue.defineReactive(obj, key, value);
-            MyVue.observe(value); //递归调用，解决嵌套属性的响应式
+            this.proxyData(key);
+            this.defineReactive(obj, key, value);
+            //   代理data中的属性到vue实例上
+            this.observe(value); //递归调用，解决嵌套属性的响应式
         }
     }
 
     //  数据响应化
-    static defineReactive(obj, key, value){
+    defineReactive(obj, key, value){
         const dep = new Dep();
         Object.defineProperty(obj, key, {
             get(){
@@ -44,8 +53,20 @@ class MyVue {
                     return;
                 }
                 // console.log(`${key}属性更新了：${value} --> ${newVal}`);
-                dep.notify();
                 value = newVal;
+                dep.notify();
+            }
+        });
+    }
+
+    // 将$data代理到vm上来
+    proxyData(key){
+        Object.defineProperty(this, key, {
+            get(){
+                return this.$data[key]
+            },
+            set(newVal){
+                this.$data[key] = newVal;
             }
         })
     }
@@ -70,11 +91,20 @@ class Dep {
 }
 
 class Watcher {
-    constructor(){
+    constructor(vm, key, cb){
+        this.vm = vm;
+        this.key = key;
+        this.cb = cb;
+
+        // 将当前watcher实例指定到Dep静态属性target
         Dep.target = this; // 等于 let watcher = new Watcher(); Dep.target = watcher;
+        this.vm[this.key]; // 重要！！！触发getter，添加依赖
+        Dep.target = null;
     }
 
     update(){
         console.log('watcher监听到了');
+
+        this.cb.call(this.vm, this.vm[this.key]);
     }
 }

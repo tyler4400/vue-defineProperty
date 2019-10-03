@@ -4,23 +4,53 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Document</title>
 </head>
 <body>
-<script src="MyVue.js"></script>
+<div id="app">
+    <!-- 插值绑定 -->
+    <p>{{name}}</p>
+    <!-- 指令解析 -->
+    <p k-text="name"></p>
+    <p>{{age}}</p>
+    <p>
+        {{doubleAge}}
+    </p>
+    <!-- 双向绑定 -->
+    <input type="text" k-model="name" />
+    <!-- 事件处理 -->
+    <button @click="changeName">呵呵</button>
+    <!-- html内容解析 -->
+    <div k-html="html"></div>
+</div>
+<script src="./compile.js"></script>
+<script src="./MyVue.js"></script>
+
 <script>
-    const app = new MyVue({
+    const myVue = new MyVue({
+        el: "#app",
         data: {
             name: "I am test.",
-            foo: {
-                bar: '嵌套属性'
+            age: 12,
+            html: "<button>这是一个按钮</button>"
+        },
+        created() {
+            console.log("开始啦");
+            setTimeout(() => {
+                console.log('变化啦');
+                this.name = "我是测试";
+            }, 1500);
+        },
+        methods: {
+            changeName() {
+                this.name = "哈喽，开课吧";
+                this.age = 1;
             }
         }
     });
-
-    app.$data.name = 'hello,there';
-    app.$data.foo.bar = '嵌套属性响应了没'
 </script>
 </body>
 </html>
