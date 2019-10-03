@@ -34,10 +34,15 @@ class Compile {
     static isElement(node){
         return node.nodeType === 1;
     }
-
     // 插值文本
     static isInterpolation(node){
         return node.nodeType === 3 && /{{(.*)}}/.test(node.textContent);
+    }
+    static isDirective(attr) {
+        return attr.indexOf("m-") === 0;
+    }
+    static isEvent(attr) {
+        return attr.indexOf("@") === 0;
     }
 
     compile(el){
@@ -45,12 +50,24 @@ class Compile {
         Array.from(childNodes).forEach(node => {
             // 类型判断
             if (Compile.isElement(node)) { // 指令元素
-
                 console.log('编译指令元素' + node.nodeName);
+                const prefix = 'compileM';
+                Array.from(node.attributes).forEach(({name: attrName, value: exp}) => {
+                    if(Compile.isDirective(attrName)){
+
+                        const dir = prefix + attrName.substring(2);// 例 k-text
+                        this[dir] && this[dir](node, this.$vm, exp);
+                    }
+                    if(Compile.isEvent(attrName)){
+
+                        const dir = attrName.substring(1); // 例 @click
+                        this.eventHandler(node, this.$vm, exp, dir);
+                    }
+                })
 
             } else if (Compile.isInterpolation(node)) { // 文本
-
                 console.log('编译插值文本' + node.textContent);
+
                 this.compileText(node);
 
             }
@@ -66,6 +83,22 @@ class Compile {
     compileText(node){
         this.update(node, this.$vm, RegExp.$1, 'text');
     }
+    compileMtext(node, vm, exp) {
+        this.update(node, vm, exp, "text");
+    }
+    compileMhtml(node, vm, exp) {
+        this.update(node, vm, exp, "html");
+    }
+    //   双绑
+    compileMmodel(node, vm, exp) {
+        // 指定input的value属性
+        this.update(node, vm, exp, "model");
+
+        // 视图对模型响应
+        node.addEventListener("input", e => {
+            vm[exp] = e.target.value;
+        });
+    }
 
     // 更新函数 这里用了策略模式
     update(node, vm, exp, dir){
@@ -79,7 +112,23 @@ class Compile {
         })
     }
 
+    modelUpdater(node, value) {
+        node.value = value;
+    }
+    htmlUpdater(node, value) {
+        node.innerHTML = value;
+    }
     textUpdater(node, value) {
         node.textContent = value;
     }
+
+    //   事件处理器
+    eventHandler(node, vm, exp, dir) {
+        //   @click="onClick"
+        let fn = vm.$options.methods && vm.$options.methods[exp];
+        if (dir && fn) {
+            node.addEventListener(dir, fn.bind(vm));
+        }
+    }
+
 }
